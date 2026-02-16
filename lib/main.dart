@@ -1,343 +1,270 @@
 import 'dart:math';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-void main() => runApp(MyApp());
+import 'package:lab1_leanbodymass/result.dart';
 
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
-}
+void main() => runApp(const MyApp());
 
-class _MyAppState extends State<MyApp> {
-  final body = new Center(
-    child: SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            child: Text(
-              "Metric Unit",
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          MyWidget(),
-        ],
-      ),
-    ),
-  );
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Lean Body Mass Calculator',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Lab 1 - Lean Body Mass Calculator',
-          ),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF006D77)),
+        scaffoldBackgroundColor: const Color(0xFFF4FBFB),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
         ),
-        body: body,
       ),
+      home: const LeanBodyMassPage(),
     );
   }
 }
 
-class MyWidget extends StatefulWidget {
-  const MyWidget({Key key}) : super(key: key);
+enum Gender { male, female }
+
+class LeanBodyMassPage extends StatefulWidget {
+  const LeanBodyMassPage({super.key});
 
   @override
-  _MyWidgetState createState() => _MyWidgetState();
+  State<LeanBodyMassPage> createState() => _LeanBodyMassPageState();
 }
 
-class _MyWidgetState extends State<MyWidget> {
-  int _radioValue = 0;
-  final TextEditingController _weightcontroller = new TextEditingController();
-  final TextEditingController _heightcontroller = new TextEditingController();
-  double weight = 0.0;
-  double height = 0.0;
-  double boerResult = 0.0;
-  double jamesResult = 0.0;
-  double humeResult = 0.0;
-  String boerFormula, jamesFormula, humeFormula;
+class _LeanBodyMassPageState extends State<LeanBodyMassPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+
+  Gender _selectedGender = Gender.male;
+
+  String _boerFormula = '-';
+  String _jamesFormula = '-';
+  String _humeFormula = '-';
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _heightController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(50, 0, 50, 0),
-            child: Row(
-              children: [
-                Text(
-                  "Gender: ",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Radio(
-                  value: 0,
-                  groupValue: _radioValue,
-                  onChanged: _handleRadioValueChange,
-                ),
-                Text("Male"),
-                SizedBox(
-                  width: 30.0,
-                ),
-                Radio(
-                  value: 1,
-                  groupValue: _radioValue,
-                  onChanged: _handleRadioValueChange,
-                ),
-                Text("Female"),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(50, 0, 50, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.numberWithOptions(),
-                    controller: _heightcontroller,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: 'Height (cm)',
-                      filled: true,
-                      fillColor: Color(0xFFDBEDFF),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(50, 10, 50, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.numberWithOptions(),
-                    controller: _weightcontroller,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: 'Weight (kg)',
-                      filled: true,
-                      fillColor: Color(0xFFDBEDFF),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(5),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: 100.0,
-                ),
-                RaisedButton(
-                  child: Text(
-                    "Calculate",
-                    style: TextStyle(
-                      fontSize: 20,
-                    ),
-                  ),
-                  padding: EdgeInsets.fromLTRB(40, 20, 40, 20),
-                  onPressed: _calculate,
-                  color: Colors.blue,
-                  textColor: Colors.white,
-                  shape: new RoundedRectangleBorder(
-                    borderRadius: new BorderRadius.circular(30.0),
-                  ),
-                ),
-                SizedBox(
-                  width: 20,
-                ),
-                //Spacer(),
-                RaisedButton(
-                  child: Text(
-                    "Clear",
-                    style: TextStyle(
-                      fontSize: 20,
-                    ),
-                  ),
-                  onPressed: _clear,
-                  padding: EdgeInsets.fromLTRB(60, 20, 60, 20),
-                  color: Colors.blue,
-                  textColor: Colors.white,
-                  shape: new RoundedRectangleBorder(
-                    borderRadius: new BorderRadius.circular(30.0),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            "Result:",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Container(
-            child: DataTable(
-              columns: const <DataColumn>[
-                DataColumn(
-                  label: Text(
-                    'Formula',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Lean Body Mass',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-              rows: <DataRow>[
-                DataRow(
-                  cells: <DataCell>[
-                    DataCell(
-                      Text(
-                        "Boer",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    DataCell(
-                      Text("$boerFormula"),
-                    ),
-                  ],
-                ),
-                DataRow(
-                  cells: <DataCell>[
-                    DataCell(
-                      Text(
-                        "James",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    DataCell(
-                      Text("$jamesFormula"),
-                    ),
-                  ],
-                ),
-                DataRow(
-                  cells: <DataCell>[
-                    DataCell(
-                      Text(
-                        "Hume",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    DataCell(
-                      Text("$humeFormula"),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          )
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Lean Body Mass Calculator'),
       ),
-    );
-  }
-
-  void _handleRadioValueChange(int value) {
-    setState(
-      () {
-        _radioValue = value;
-      },
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Colors.teal.shade100),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Metric Unit',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Gender',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<Gender>(
+                          segments: const [
+                            ButtonSegment<Gender>(
+                              value: Gender.male,
+                              icon: Icon(Icons.male),
+                              label: Text('Male'),
+                            ),
+                            ButtonSegment<Gender>(
+                              value: Gender.female,
+                              icon: Icon(Icons.female),
+                              label: Text('Female'),
+                            ),
+                          ],
+                          selected: <Gender>{_selectedGender},
+                          onSelectionChanged: (Set<Gender> selected) {
+                            setState(() => _selectedGender = selected.first);
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          controller: _heightController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*[,.]?\d*$'),
+                            ),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Height (cm)',
+                            hintText: 'e.g. 170',
+                          ),
+                          validator: (value) => _validatePositiveNumber(
+                            value,
+                            fieldName: 'Height',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          controller: _weightController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*[,.]?\d*$'),
+                            ),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Weight (kg)',
+                            hintText: 'e.g. 70',
+                          ),
+                          validator: (value) => _validatePositiveNumber(
+                            value,
+                            fieldName: 'Weight',
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: _calculate,
+                              icon: const Icon(Icons.calculate_outlined),
+                              label: const Text('Calculate'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: _clear,
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Clear'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Result',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        ResultTable(
+                          boerFormula: _boerFormula,
+                          jamesFormula: _jamesFormula,
+                          humeFormula: _humeFormula,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   void _calculate() {
-    setState(
-      () {
-        if (_weightcontroller.text.isEmpty &&
-            _heightcontroller.text.isNotEmpty) {
-          weight = 0;
-        } else if (_heightcontroller.text.isEmpty &&
-            _weightcontroller.text.isNotEmpty) {
-          height = 0;
-        } else {
-          weight = double.parse(_weightcontroller.text);
-          height = double.parse(_heightcontroller.text);
-        }
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      return;
+    }
 
-        if (_radioValue == 0) {
-          boerResult = (0.407 * weight) + (0.267 * height) - 19.2;
-          boerFormula = format(boerResult);
-          jamesResult = (1.1 * weight) - (128 * (pow((weight / height), 2)));
-          jamesFormula = format(jamesResult);
-          humeResult = (0.32810 * weight) + (0.33929 * height) - 29.5336;
-          humeFormula = format(humeResult);
-        } else if (_radioValue == 1) {
-          boerResult = (0.252 * weight) + (0.473 * height) - 48.3;
-          boerFormula = format(boerResult);
-          jamesResult = (1.07 * weight) - (148 * (pow((weight / height), 2)));
-          jamesFormula = format(jamesResult);
-          humeResult = (0.29569 * weight) + (0.41813 * height) - 43.2933;
-          humeFormula = format(humeResult);
-        }
-      },
-    );
+    final double height = _parseController(_heightController);
+    final double weight = _parseController(_weightController);
+
+    if (height <= 0 || weight <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter valid height and weight values.'),
+        ),
+      );
+      return;
+    }
+
+    final bool male = _selectedGender == Gender.male;
+    final double boerResult = male
+        ? (0.407 * weight) + (0.267 * height) - 19.2
+        : (0.252 * weight) + (0.473 * height) - 48.3;
+    final double jamesResult = male
+        ? (1.1 * weight) - (128 * pow(weight / height, 2))
+        : (1.07 * weight) - (148 * pow(weight / height, 2));
+    final double humeResult = male
+        ? (0.32810 * weight) + (0.33929 * height) - 29.5336
+        : (0.29569 * weight) + (0.41813 * height) - 43.2933;
+
+    setState(() {
+      _boerFormula = _format(boerResult);
+      _jamesFormula = _format(jamesResult);
+      _humeFormula = _format(humeResult);
+    });
   }
 
   void _clear() {
-    setState(
-      () {
-        _weightcontroller.clear();
-        _heightcontroller.clear();
-        boerFormula = "null";
-        humeFormula = "null";
-        jamesFormula = "null";
-      },
-    );
+    _formKey.currentState?.reset();
+    _weightController.clear();
+    _heightController.clear();
+
+    setState(() {
+      _boerFormula = '-';
+      _humeFormula = '-';
+      _jamesFormula = '-';
+      _selectedGender = Gender.male;
+    });
   }
 
-  String format(double n) {
+  String? _validatePositiveNumber(String? value, {required String fieldName}) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required.';
+    }
+
+    final normalized = value.replaceAll(',', '.');
+    final parsedValue = double.tryParse(normalized);
+    if (parsedValue == null) {
+      return 'Enter a valid number.';
+    }
+    if (parsedValue <= 0) {
+      return '$fieldName must be greater than 0.';
+    }
+    return null;
+  }
+
+  double _parseController(TextEditingController controller) {
+    return double.parse(controller.text.trim().replaceAll(',', '.'));
+  }
+
+  String _format(double n) {
     return n.toStringAsFixed(n.truncateToDouble() == n ? 0 : 2);
   }
 }
